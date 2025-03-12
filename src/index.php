@@ -21,7 +21,7 @@ $result = $conn->query($sql);
 // Start HTML output
 echo "<!DOCTYPE html><html><head><title>Users to be Disabled</title>";
 echo "<style>";
-echo "table { border-collapse: collapse; width: 100%; font-family: monospace; }";
+echo "table { border-collapse: collapse; width: 800px; font-family: monospace; }";
 echo "th, td { border: 1px solid black; padding: 8px; text-align: left; }";
 echo "tr { border: 1px solid black; }";
 echo "th { background-color: #f2f2f2; }";
