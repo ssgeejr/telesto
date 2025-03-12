@@ -1,4 +1,5 @@
 # CakePHP 3
+.env
 
 *.csv
 *.xls

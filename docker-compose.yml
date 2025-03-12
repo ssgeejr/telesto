@@ -6,9 +6,11 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8080:80"
+      - "80:80"
     volumes:
       - ./src:/var/www/html
     environment:
       - APACHE_LOG_DIR=/var/log/apache2
     container_name: tolesto
+    extra_hosts:
+     - "tethys:${PUBLIC_IP}"
