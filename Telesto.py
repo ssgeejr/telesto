@@ -30,6 +30,11 @@ class Parser:
 
             print(f'Parsing file {self.filename}')
 
+            # Clear existing data from the table
+            self.db_cursor.execute("DELETE FROM disable")
+            self.db_connection.commit()
+            print("Existing records deleted.")
+
             with open(self.filename, mode='r', encoding='utf-8') as csvfile:
                 reader = csv.reader(csvfile)
                 headers = next(reader)  # Read the header row
@@ -46,28 +51,39 @@ class Parser:
                     VALUES (%s, %s, %s, %s, %s)
                 """
 
+                date_formats = ["%m/%d/%Y %H:%M", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"]
+                record_count = 0  # Track number of inserted records
+
                 for row in reader:
                     try:
                         name = row[name_idx].strip()
                         email = row[email_idx].strip()
                         department = row[department_idx].strip()
 
-                        # Convert LastLoginDateTime to DATE format
                         lastlogin_str = row[lastlogin_idx].strip()
-                        lastlogin = datetime.strptime(lastlogin_str,
-                                                      "%Y-%m-%d %H:%M:%S").date() if lastlogin_str else None
+                        lastlogin = None
+                        if lastlogin_str:
+                            for fmt in date_formats:
+                                try:
+                                    lastlogin = datetime.strptime(lastlogin_str, fmt).date()
+                                    break
+                                except ValueError:
+                                    continue
 
-                        # Convert DaysSinceLastLogin to an integer
                         lastlogindays = int(row[lastlogindays_idx].strip()) if row[
                             lastlogindays_idx].strip().isdigit() else None
 
-                        self.db_cursor.execute(insert_query, (name, email, department, lastlogin, lastlogindays))
+                        if lastlogin is not None:
+                            self.db_cursor.execute(insert_query, (name, email, department, lastlogin, lastlogindays))
+                            record_count += 1
+                        else:
+                            print(f"Skipping row due to unrecognized date format: {lastlogin_str}")
 
                     except (ValueError, IndexError) as e:
                         print(f"Skipping row due to error: {e}")
 
             self.db_connection.commit()
-            print("Data insertion completed successfully.")
+            print(f"Data insertion completed successfully. {record_count} records inserted.")
 
         except FileNotFoundError as e:
             raise FileNotFoundError(f"File Error: {e}")
@@ -83,7 +99,7 @@ class Parser:
                 self.db_connection.close()
 
     def process(self, argv):
-
+        self.filename = None
         try:
             opts, args = getopt.getopt(argv, "f:k:hx")
         except getopt.GetoptError as e:
@@ -92,7 +108,7 @@ class Parser:
         for opt, arg in opts:
             if opt == '-h':
                 print('Telesto.py -h Help Message  #This help message')
-                print('Telesto.py -f {nmap file}   #The NMAP file to parse')
+                print('Telesto.py -f {csv file}    #The csv disable file to parse')
                 print('Telesto.py -x               #DO not insert records ... just print the results')
                 sys.exit()
             elif opt in "-x":
